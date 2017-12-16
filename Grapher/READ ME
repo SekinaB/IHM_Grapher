@@ -1,0 +1,14 @@
+					READ ME
+
+	Pour ce TP, nous ne pensons pas que vous avez demandé un rapport. C'est 
+pour cela que nous n'en avons pas fait un, cependant nous voulions vous faire
+savoir certaines choses.
+
+	Nous ne sommes pas parvenu a faire changer les couleur des fonctions
+automatiquement lorsque l'utilisateur choisit une couleur. Nous ne sommes pas 
+arrivées à ajout au listener sur les ColorPicker du TableView. Cependant, si
+on fait une autre action juste après, on voit bien sur que la couleur change.
+
+	Pour ce qui est de l'edition, nous sommes restées dessus pendant un long
+moment jusqu'à ce que nous demandions de l'aide à Zoran qui nous a expliqué
+comment faire.  
