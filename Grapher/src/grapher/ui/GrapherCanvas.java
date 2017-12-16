@@ -5,17 +5,12 @@ import static java.lang.Math.*;
 import java.util.List;
 import java.util.Optional;
 
-import javafx.util.Callback;
-import javafx.util.StringConverter;
 import javafx.util.converter.DoubleStringConverter;
 
-import javafx.beans.value.ChangeListener;
-import javafx.collections.ListChangeListener;
-import javafx.collections.ListChangeListener.Change;
-import javafx.beans.value.ObservableValue;
 import javafx.geometry.Point2D;
 import javafx.geometry.Rectangle2D;
-
+import javafx.beans.value.ChangeListener;
+import javafx.beans.value.ObservableValue;
 import javafx.scene.paint.Color;
 import javafx.scene.paint.Paint;
 import javafx.scene.canvas.GraphicsContext;
@@ -27,13 +22,9 @@ import javafx.scene.control.Alert.AlertType;
 import javafx.scene.control.Alert;
 import javafx.scene.control.ToolBar;
 import javafx.scene.control.Button;
-import javafx.scene.control.ColorPicker;
-//import javafx.scene.control.ColorPicker;
-//import javafx.scene.control.ListCell;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
-import javafx.scene.control.cell.TextFieldTableCell;
 import javafx.scene.input.KeyCodeCombination;
 import javafx.scene.input.KeyCombination;
 import javafx.scene.input.KeyCode;
@@ -63,10 +54,6 @@ public class GrapherCanvas extends Canvas {
 	protected Rectangle2D r;
 
 	protected TableView<FunctionC> tableFunctions = new TableView<FunctionC>();
-	//protected TableColumn<Functiong> functionColumn = new TableColumn<FunctionC, String>("Function"); 
-	//TableColumn<FunctionC, ColorPicker> colorColumn = new TableColumn<FunctionC, ColorPicker>("Couleur"); ; 
-	
-
 	protected ListView<Function> listFunctions = new ListView<Function>();
 
 	public GrapherCanvas(List<String> listfun, TableView<FunctionC> table, ToolBar tools, MenuBar menuBar) {
@@ -75,10 +62,11 @@ public class GrapherCanvas extends Canvas {
 		xmax = 3 * PI / 2;
 		ymin = -1.5;
 		ymax = 1.5;
-		// Gestion des evenements lies au clique de la souris
+
+		// Management of the event linked to the mouse
 		this.addEventHandler(MouseEvent.ANY, new HandlerMouse());
 
-		// Gestion des evenements lies a la molette de la souris
+		// Management of the event linked to the scroll on the mouse
 		this.addEventHandler(ScrollEvent.ANY, new EventHandler<ScrollEvent>() {
 			Point2D p;
 
@@ -90,55 +78,50 @@ public class GrapherCanvas extends Canvas {
 		});
 
 		tableFunctions = table;
-		
-		for(String e : listfun){
+
+		// Initialization of the list of function, used to ease their usage.
+		for (String e : listfun) {
 			listFunctions.getItems().add(FunctionFactory.createFunction(e));
 		}
 
-		// Gestion des selections de fonction dans la liste
+		// Management of the selection of item in the table 
 		tableFunctions.getSelectionModel().selectedItemProperty().addListener(new ChangeListener<FunctionC>() {
 			@Override
-			public void changed(ObservableValue<? extends FunctionC> observable, FunctionC oldValue, FunctionC newValue) {
+			public void changed(ObservableValue<? extends FunctionC> observable, FunctionC oldValue,
+					FunctionC newValue) {
 				redraw();
 			}
 		});
-		
-//		tableFunctions.getColumns().addListener(new ListChangeListener<? super TableColumn<FunctionC,?>> (){
-//			public void onChanged(Change<? super TableColumn<FunctionC,?>> c) {
-//				redraw();
-//			}
-//		});
-		
 
-		// Creation des boutons
+		// Creation of the button
 		Button add = new Button("Add");
 		Button del = new Button("Delete");
 		Button clr = new Button("Clear");
 
-		// Gestion de l'action des boutons
+		// Setting of their action
 		add.setOnAction(new HandlerAdd());
 		del.setOnAction(new HandlerDel());
 		clr.setOnAction(new HandlerClr());
 
-		// Ajout des boutons dans la boite a outil
+		// Addition of the buttons in the tool box
 		tools.getItems().addAll(add, del, clr);
 
-		// Creation des lignes du menu
+		// Creation of the lines in the menu
 		MenuItem addM = new MenuItem("Add new function");
 		MenuItem delM = new MenuItem("Delete a function");
 		MenuItem clrM = new MenuItem("Clear");
 
-		// Gestion de l'action des ligne
+		// Setting of their action
 		addM.setOnAction(new HandlerAdd());
 		delM.setOnAction(new HandlerDel());
 		clrM.setOnAction(new HandlerClr());
 
-		// Ajout des raccourcis clavie
+		// Addition of their accelerators
 		addM.setAccelerator(new KeyCodeCombination(KeyCode.N, KeyCombination.CONTROL_DOWN));
 		delM.setAccelerator(new KeyCodeCombination(KeyCode.D, KeyCombination.CONTROL_DOWN));
 		clrM.setAccelerator(new KeyCodeCombination(KeyCode.C, KeyCombination.CONTROL_DOWN));
 
-		// Ajout des ligne dans le menu
+		// Addition of the lines in the menu
 		menuBar.getMenus().get(0).getItems().addAll(addM, delM, clrM);
 	}
 
@@ -219,11 +202,14 @@ public class GrapherCanvas extends Canvas {
 			for (int i = 0; i < N; i++) {
 				Ys[i] = Y(listFunctions.getItems().get(j).y(xs[i]));
 			}
+			// If the function is selected in the table
 			if (tableFunctions.getSelectionModel().isSelected(j)) {
-				gc.setLineWidth(2.75);			
+				// it is drawn bold
+				gc.setLineWidth(2.75);
 			} else {
 				gc.setLineWidth(1);
 			}
+			// The function is draw according to its color
 			gc.setStroke(Paint.valueOf(tableFunctions.getItems().get(j).getColor().getValue().toString()));
 			gc.strokePolyline(Xs, Ys, N);
 
@@ -251,7 +237,8 @@ public class GrapherCanvas extends Canvas {
 		for (double y = -ystep; y > ymin; y -= ystep) {
 			drawYTick(gc, y);
 		}
-		// TODO : Code pas optimal demander pour le dessin d'un rectangle
+		
+		// If the rectangle exist, it is draw
 		if (r != null)
 			gc.strokeRect(r.getMinX(), r.getMinY(), r.getWidth(), r.getHeight());
 
@@ -352,8 +339,6 @@ public class GrapherCanvas extends Canvas {
 		Point2D p;
 
 		public void handle(MouseEvent event) {
-			// System.out.println(event.getButton().name() + " " +
-			// event.getEventType().getName());
 			switch (state) {
 			case IDLE:
 				switch (event.getEventType().getName()) {
@@ -415,13 +400,9 @@ public class GrapherCanvas extends Canvas {
 					double height = abs(event.getY() - p.getY());
 					double width = abs(event.getX() - p.getX());
 					r = new Rectangle2D(p_min.getX(), p_min.getY(), width, height);
-					// TODO : Code pas optimal demander pour le dessin d'un
-					// rectangle
 					redraw();
 					break;
 				case "MOUSE_RELEASED":
-					// TODO : Code pas optimal demander pour le dessin d'un
-					// rectangle
 					zoom(new Point2D(r.getMinX(), r.getMinY()), new Point2D(r.getMaxX(), r.getMaxY()));
 					r = null;
 					redraw();
@@ -440,7 +421,7 @@ public class GrapherCanvas extends Canvas {
 			String result = userInput();
 			try {
 				listFunctions.getItems().add(FunctionFactory.createFunction(result));
-				tableFunctions.getItems().add(new FunctionC(FunctionFactory.createFunction(result), Color.BLACK));
+				tableFunctions.getItems().add(new FunctionC(result, Color.BLACK));
 				redraw();
 			} catch (Exception e) {
 				Alert alert = new Alert(Alert.AlertType.ERROR);
@@ -473,13 +454,12 @@ public class GrapherCanvas extends Canvas {
 				alert.setHeaderText("No function selected");
 				alert.setContentText("Error function : Couldn't delete the function");
 				alert.showAndWait();
+			} else {
+				int indfunction = tableFunctions.getSelectionModel().getSelectedIndex();
+				tableFunctions.getItems().remove(indfunction);
+				listFunctions.getItems().remove(indfunction);
+				redraw();
 			}
-			else{
-			int indfunction = tableFunctions.getSelectionModel().getSelectedIndex();
-			tableFunctions.getItems().remove(indfunction);
-			listFunctions.getItems().remove(indfunction);
-			redraw();
-		}
 		}
 	}
 
@@ -491,6 +471,26 @@ public class GrapherCanvas extends Canvas {
 			tableFunctions.getItems().clear();
 			listFunctions.getItems().clear();
 			redraw();
+		}
+	}
+
+	/**
+	 * @copyright Servan & Zoran Zoran gave us the idea to implement this
+	 *            function
+	 */
+	public void newFunction(String newF, String oldF, int ind) {
+		try {
+			listFunctions.getItems().set(ind, FunctionFactory.createFunction(newF));
+			tableFunctions.getItems().get(ind).setFunction(newF);
+			redraw();
+		} catch (Exception e) {
+			TableColumn.editCancelEvent();
+			Alert alert = new Alert(AlertType.ERROR);
+			alert.setTitle("ERROR");
+			alert.setHeaderText("Function not found");
+			alert.setContentText("Error function : Couldn't evaluate function");
+			alert.showAndWait();
+			;
 		}
 	}
 
