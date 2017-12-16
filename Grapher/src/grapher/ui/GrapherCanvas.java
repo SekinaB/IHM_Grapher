@@ -2,17 +2,22 @@ package grapher.ui;
 
 import static java.lang.Math.*;
 
+import java.util.List;
 import java.util.Optional;
 
 import javafx.util.Callback;
+import javafx.util.StringConverter;
 import javafx.util.converter.DoubleStringConverter;
 
 import javafx.beans.value.ChangeListener;
+import javafx.collections.ListChangeListener;
+import javafx.collections.ListChangeListener.Change;
 import javafx.beans.value.ObservableValue;
 import javafx.geometry.Point2D;
 import javafx.geometry.Rectangle2D;
 
 import javafx.scene.paint.Color;
+import javafx.scene.paint.Paint;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.control.ListView;
@@ -22,9 +27,13 @@ import javafx.scene.control.Alert.AlertType;
 import javafx.scene.control.Alert;
 import javafx.scene.control.ToolBar;
 import javafx.scene.control.Button;
-import javafx.scene.control.ListCell;
+import javafx.scene.control.ColorPicker;
+//import javafx.scene.control.ColorPicker;
+//import javafx.scene.control.ListCell;
 import javafx.scene.control.MenuItem;
-import javafx.scene.control.TextField;
+import javafx.scene.control.TableColumn;
+import javafx.scene.control.TableView;
+import javafx.scene.control.cell.TextFieldTableCell;
 import javafx.scene.input.KeyCodeCombination;
 import javafx.scene.input.KeyCombination;
 import javafx.scene.input.KeyCode;
@@ -53,9 +62,14 @@ public class GrapherCanvas extends Canvas {
 
 	protected Rectangle2D r;
 
-	protected ListView<Function> listFunctions;
+	protected TableView<FunctionC> tableFunctions = new TableView<FunctionC>();
+	//protected TableColumn<Functiong> functionColumn = new TableColumn<FunctionC, String>("Function"); 
+	//TableColumn<FunctionC, ColorPicker> colorColumn = new TableColumn<FunctionC, ColorPicker>("Couleur"); ; 
+	
 
-	public GrapherCanvas(ListView<Function> list, ToolBar tools, MenuBar menuBar) {
+	protected ListView<Function> listFunctions = new ListView<Function>();
+
+	public GrapherCanvas(List<String> listfun, TableView<FunctionC> table, ToolBar tools, MenuBar menuBar) {
 		super(WIDTH, HEIGHT);
 		xmin = -PI / 2.;
 		xmax = 3 * PI / 2;
@@ -75,26 +89,26 @@ public class GrapherCanvas extends Canvas {
 			}
 		});
 
-		list.setEditable(true);
-		listFunctions = list;
+		tableFunctions = table;
+		
+		for(String e : listfun){
+			listFunctions.getItems().add(FunctionFactory.createFunction(e));
+		}
 
 		// Gestion des selections de fonction dans la liste
-		listFunctions.getSelectionModel().selectedItemProperty().addListener(new ChangeListener<Function>() {
+		tableFunctions.getSelectionModel().selectedItemProperty().addListener(new ChangeListener<FunctionC>() {
 			@Override
-			public void changed(ObservableValue<? extends Function> observable, Function oldValue, Function newValue) {
+			public void changed(ObservableValue<? extends FunctionC> observable, FunctionC oldValue, FunctionC newValue) {
 				redraw();
 			}
 		});
-
-		listFunctions.setCellFactory(new Callback<ListView<Function>, ListCell<Function>>() {
-			@Override
-			public ListCell<Function> call(ListView<Function> param) {
-				ListCell<Function> new_cell = new ListCell<Function>(){
-					
-				};
-				return new_cell;
-			}
-		});
+		
+//		tableFunctions.getColumns().addListener(new ListChangeListener<? super TableColumn<FunctionC,?>> (){
+//			public void onChanged(Change<? super TableColumn<FunctionC,?>> c) {
+//				redraw();
+//			}
+//		});
+		
 
 		// Creation des boutons
 		Button add = new Button("Add");
@@ -154,7 +168,7 @@ public class GrapherCanvas extends Canvas {
 		redraw();
 	}
 
-	private void redraw() {
+	public void redraw() {
 		GraphicsContext gc = getGraphicsContext2D();
 
 		W = getWidth();
@@ -205,13 +219,13 @@ public class GrapherCanvas extends Canvas {
 			for (int i = 0; i < N; i++) {
 				Ys[i] = Y(listFunctions.getItems().get(j).y(xs[i]));
 			}
-			if (listFunctions.getSelectionModel().isSelected(j)) {
-				gc.setLineWidth(2.75);
-				gc.strokePolyline(Xs, Ys, N);
+			if (tableFunctions.getSelectionModel().isSelected(j)) {
+				gc.setLineWidth(2.75);			
 			} else {
 				gc.setLineWidth(1);
-				gc.strokePolyline(Xs, Ys, N);
 			}
+			gc.setStroke(Paint.valueOf(tableFunctions.getItems().get(j).getColor().getValue().toString()));
+			gc.strokePolyline(Xs, Ys, N);
 
 		}
 
@@ -426,6 +440,7 @@ public class GrapherCanvas extends Canvas {
 			String result = userInput();
 			try {
 				listFunctions.getItems().add(FunctionFactory.createFunction(result));
+				tableFunctions.getItems().add(new FunctionC(FunctionFactory.createFunction(result), Color.BLACK));
 				redraw();
 			} catch (Exception e) {
 				Alert alert = new Alert(Alert.AlertType.ERROR);
@@ -453,20 +468,18 @@ public class GrapherCanvas extends Canvas {
 
 		@Override
 		public void handle(ActionEvent event) {
-			if (listFunctions.getSelectionModel().isEmpty()) {
+			if (tableFunctions.getSelectionModel().isEmpty()) {
 				alert.setTitle("ERROR");
 				alert.setHeaderText("No function selected");
 				alert.setContentText("Error function : Couldn't delete the function");
 				alert.showAndWait();
 			}
-			Function function = listFunctions.getSelectionModel().getSelectedItem();
-			if (!listFunctions.getItems().remove(function)) {
-				alert.setTitle("ERROR");
-				alert.setHeaderText("Function not found");
-				alert.setContentText("Error function : Couldn't delete function");
-				alert.showAndWait();
-			}
+			else{
+			int indfunction = tableFunctions.getSelectionModel().getSelectedIndex();
+			tableFunctions.getItems().remove(indfunction);
+			listFunctions.getItems().remove(indfunction);
 			redraw();
+		}
 		}
 	}
 
@@ -475,14 +488,10 @@ public class GrapherCanvas extends Canvas {
 
 		@Override
 		public void handle(ActionEvent event) {
-			if (listFunctions.getItems().isEmpty()) {
-				alert.setTitle("ERROR");
-				alert.setHeaderText("No function in the list");
-				alert.setContentText("Error function : Couldn't delete the functions");
-				alert.showAndWait();
-			}
+			tableFunctions.getItems().clear();
 			listFunctions.getItems().clear();
 			redraw();
 		}
 	}
+
 }
